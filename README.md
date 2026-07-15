@@ -29,7 +29,7 @@
 - `StandardScaler` 对输入做标准化；
 - `TransformedTargetRegressor + StandardScaler` 对输出做标准化；
 - 核心回归器：`GaussianProcessRegressor`（高斯过程回归，RBF + 常数核 + 白噪声核）；
-- 使用训练集 5 折交叉验证估计训练侧泛化误差（仅训练数据）。
+- 使用训练集交叉验证估计训练侧泛化误差（仅训练数据），折数最多为 5，并会根据训练样本数自动调整。
 
 选择理由：
 
@@ -45,9 +45,15 @@
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
+
+当前项目依赖已在 `requirements.txt` 中列出，包括：
+
+- `numpy`
+- `scipy`
+- `scikit-learn`
 
 ---
 
@@ -72,7 +78,8 @@ python train.py --data dataX.mat --report results.json --save-pred predictions_t
 ## 5. 可复现性说明
 
 - 固定随机种子 `random_state=42`；
-- 交叉验证 `KFold(shuffle=True, random_state=42)`；
+- 交叉验证使用 `KFold(shuffle=True, random_state=42)`；
+- 交叉验证折数最多为 5，并会根据训练样本数自动调整；
 - 所有训练与调参均仅基于训练集。
 
 ---
@@ -81,7 +88,7 @@ python train.py --data dataX.mat --report results.json --save-pred predictions_t
 
 `results.json` 关键字段：
 
-- `cv_rmse_train_only`：仅训练集上的 5 折 CV RMSE；
+- `cv_rmse_train_only`：仅训练集上的交叉验证 RMSE；
 - `test_rmse`：测试集 RMSE（最终指标）；
 - `threshold_met`：是否满足 `test_rmse < 1e-2`。
 
