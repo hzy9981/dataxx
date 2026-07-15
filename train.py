@@ -110,7 +110,11 @@ def build_model(random_state: int = 42):
 
 def evaluate_cv(model, x_train: np.ndarray, y_train: np.ndarray, folds: int = 5) -> float:
     # CV is done only on training data, respecting the no-test-training requirement.
-    kf = KFold(n_splits=folds, shuffle=True, random_state=42)
+    effective_folds = min(folds, x_train.shape[0])
+    if effective_folds < 2:
+        raise ValueError("Not enough training samples for cross-validation; need at least 2 samples.")
+
+    kf = KFold(n_splits=effective_folds, shuffle=True, random_state=42)
     neg_mse_scores = cross_val_score(
         model,
         x_train,
@@ -160,6 +164,9 @@ def main():
 
     np.save(args.save_pred, y_pred_test)
 
+    fitted_regressor = model.named_steps["reg"].regressor_
+    fitted_kernel = getattr(fitted_regressor, "kernel_", fitted_regressor.kernel)
+
     report = {
         "data_file": str(data_path),
         "n_train": int(x_train.shape[0]),
@@ -171,7 +178,7 @@ def main():
         "threshold_met": bool(test_rmse < 1e-2),
         "model": {
             "type": "Pipeline(StandardScaler + TransformedTargetRegressor(GaussianProcessRegressor))",
-            "kernel": str(model.named_steps["reg"].regressor.kernel),
+            "kernel": str(fitted_kernel),
             "n_restarts_optimizer": 8,
             "random_state": 42,
         },
